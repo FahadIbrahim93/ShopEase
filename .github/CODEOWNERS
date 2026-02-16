@@ -1,0 +1,6 @@
+# Default ownership; replace usernames/teams with real maintainers.
+* @shop-ease/core-maintainers
+
+# Security-related files require security owner review.
+.github/ISSUE_TEMPLATE/05-security.yml @shop-ease/security-maintainers
+docs/RESEARCH_AND_10_10_PLAN.md @shop-ease/core-maintainers @shop-ease/security-maintainers

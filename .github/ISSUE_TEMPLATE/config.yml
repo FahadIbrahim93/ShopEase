@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Architecture Discussion
+    url: https://example.com/replace-with-discussion-link
+    about: Use for high-level architecture debates before opening implementation issues.

@@ -1,0 +1,45 @@
+name: Task
+description: Technical implementation task.
+title: "[TASK] "
+labels: ["type:task", "priority:p2"]
+body:
+  - type: input
+    id: parent
+    attributes:
+      label: Parent issue
+      description: Link epic/feature.
+      placeholder: "#123"
+    validations:
+      required: true
+  - type: textarea
+    id: work_description
+    attributes:
+      label: Work description
+    validations:
+      required: true
+  - type: textarea
+    id: definition_of_done
+    attributes:
+      label: Definition of done
+      placeholder: |
+        - [ ] Code completed
+        - [ ] Tests passing
+        - [ ] Docs updated
+    validations:
+      required: true
+  - type: textarea
+    id: test_plan
+    attributes:
+      label: Test plan
+    validations:
+      required: true
+  - type: dropdown
+    id: ai_ready
+    attributes:
+      label: AI execution readiness
+      options:
+        - ai:ready
+        - ai:needs-context
+        - ai:human-only
+    validations:
+      required: true

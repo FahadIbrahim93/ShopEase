@@ -1,0 +1,42 @@
+name: Feature
+description: New user-facing capability tied to a business objective.
+title: "[FEATURE] "
+labels: ["type:feature", "priority:p1"]
+body:
+  - type: input
+    id: user_story
+    attributes:
+      label: User story
+      placeholder: As a ..., I want ..., so that ...
+    validations:
+      required: true
+  - type: textarea
+    id: business_value
+    attributes:
+      label: Business value
+      description: Why this matters now.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Acceptance criteria
+      placeholder: |
+        - [ ] Criterion 1
+        - [ ] Criterion 2
+    validations:
+      required: true
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints
+      description: Security/performance/compliance constraints.
+    validations:
+      required: true
+  - type: textarea
+    id: ai_handoff
+    attributes:
+      label: AI-coder handoff packet
+      description: Include interfaces touched, non-goals, and required evidence.
+    validations:
+      required: true
