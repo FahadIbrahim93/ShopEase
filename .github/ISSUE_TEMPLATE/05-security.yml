@@ -1,0 +1,42 @@
+name: Security
+description: Security vulnerability, hardening action, or control gap.
+title: "[SECURITY] "
+labels: ["type:security", "priority:p0", "area:security"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Security issue summary
+    validations:
+      required: true
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - Critical
+        - High
+        - Medium
+        - Low
+    validations:
+      required: true
+  - type: textarea
+    id: threat
+    attributes:
+      label: Threat scenario
+      description: Attack path and impacted assets.
+    validations:
+      required: true
+  - type: textarea
+    id: remediation
+    attributes:
+      label: Proposed remediation
+    validations:
+      required: true
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification plan
+      description: Scans/tests that must pass before closure.
+    validations:
+      required: true

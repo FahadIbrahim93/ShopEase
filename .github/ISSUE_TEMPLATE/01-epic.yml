@@ -1,0 +1,42 @@
+name: Epic
+description: Strategic objective composed of multiple features/tasks.
+title: "[EPIC] "
+labels: ["type:epic"]
+body:
+  - type: input
+    id: objective
+    attributes:
+      label: Strategic objective
+      description: What business outcome does this epic deliver?
+    validations:
+      required: true
+  - type: textarea
+    id: success_metrics
+    attributes:
+      label: Success metrics (KPIs)
+      description: List measurable targets.
+      placeholder: |
+        - KPI 1
+        - KPI 2
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: In-scope and out-of-scope details.
+    validations:
+      required: true
+  - type: textarea
+    id: milestones
+    attributes:
+      label: Milestones
+      description: Break down implementation milestones.
+    validations:
+      required: true
+  - type: textarea
+    id: risks
+    attributes:
+      label: Risks and dependencies
+    validations:
+      required: true
