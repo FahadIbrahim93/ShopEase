@@ -1,9 +1,9 @@
+import hmac
 import logging
-from datetime import UTC, datetime
 from time import perf_counter
 from uuid import uuid4
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Request
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
 from fastapi.responses import JSONResponse, Response
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
 
@@ -16,6 +16,7 @@ from app.models import (
     LowStockItem,
     Product,
     ProductCreate,
+    ProductListResponse,
 )
 from app.services.inventory_service import InventoryService
 
@@ -33,8 +34,12 @@ REQUEST_LATENCY = Histogram(
     ['method', 'path'],
 )
 
-app = FastAPI(title='ShopEase API', version='0.1.0')
-service = InventoryService()
+app = FastAPI(title='ShopEase API', version='0.3.0')
+app.state.inventory_service = InventoryService()
+
+
+def get_inventory_service(request: Request) -> InventoryService:
+    return request.app.state.inventory_service
 
 
 @app.middleware('http')
@@ -46,11 +51,13 @@ async def observability_middleware(request: Request, call_next):
     except Exception:  # noqa: BLE001
         logger.exception('Unhandled exception request_id=%s path=%s', request_id, request.url.path)
         response = JSONResponse(status_code=500, content={'detail': 'Internal server error'})
+
     elapsed = perf_counter() - start
     path = request.url.path
     REQUEST_COUNT.labels(request.method, path, str(response.status_code)).inc()
     REQUEST_LATENCY.labels(request.method, path).observe(elapsed)
     response.headers['x-request-id'] = request_id
+    response.headers['x-process-time'] = str(elapsed)
     return response
 
 
@@ -58,7 +65,8 @@ def require_api_key(
     x_api_key: str | None = Header(default=None),
     settings: Settings = Depends(get_settings),
 ) -> None:
-    if x_api_key != settings.api_key:
+    expected_key = settings.api_key.get_secret_value()
+    if x_api_key is None or not hmac.compare_digest(x_api_key, expected_key):
         raise HTTPException(status_code=401, detail='Invalid API key')
 
 
@@ -72,9 +80,14 @@ def metrics() -> Response:
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
-@app.get('/products', response_model=list[Product])
-def list_products() -> list[Product]:
-    return service.list_products()
+@app.get('/products', response_model=ProductListResponse)
+def list_products(
+    limit: int = Query(default=50, ge=1, le=1000),
+    offset: int = Query(default=0, ge=0),
+    service: InventoryService = Depends(get_inventory_service),
+) -> ProductListResponse:
+    items, total = service.list_products(limit=limit, offset=offset)
+    return ProductListResponse(items=items, total=total, limit=limit, offset=offset)
 
 
 @app.post(
@@ -85,6 +98,7 @@ def list_products() -> list[Product]:
 def create_or_update_product(
     payload: ProductCreate,
     _: None = Depends(require_api_key),
+    service: InventoryService = Depends(get_inventory_service),
 ) -> Product:
     created = service.upsert_product(payload)
     logger.info('Product upserted sku=%s quantity=%s', created.sku, created.quantity)
@@ -100,6 +114,7 @@ def adjust_product_inventory(
     sku: str,
     payload: InventoryAdjustment,
     _: None = Depends(require_api_key),
+    service: InventoryService = Depends(get_inventory_service),
 ) -> Product:
     try:
         updated = service.adjust_inventory(sku, payload.delta)
@@ -113,6 +128,7 @@ def adjust_product_inventory(
 @app.get('/reports/low-stock', response_model=list[LowStockItem])
 def get_low_stock_report(
     settings: Settings = Depends(get_settings),
+    service: InventoryService = Depends(get_inventory_service),
 ) -> list[LowStockItem]:
     return service.low_stock(settings.low_stock_threshold)
 
@@ -120,16 +136,24 @@ def get_low_stock_report(
 @app.post(
     '/sync/inventory',
     response_model=InventorySyncResult,
-    responses={401: {'model': ErrorResponse}},
+    responses={400: {'model': ErrorResponse}, 401: {'model': ErrorResponse}},
 )
 def sync_inventory(
     payload: InventorySyncRequest,
     _: None = Depends(require_api_key),
+    service: InventoryService = Depends(get_inventory_service),
+    x_idempotency_key: str | None = Header(default=None),
 ) -> InventorySyncResult:
-    upserted = service.bulk_upsert(payload.records)
-    logger.info('Inventory sync source=%s upserted=%s', payload.source, upserted)
-    return InventorySyncResult(
+    if x_idempotency_key is not None and len(x_idempotency_key.strip()) < 8:
+        raise HTTPException(
+            status_code=400,
+            detail='x-idempotency-key must be at least 8 characters',
+        )
+
+    result = service.sync_inventory(
         source=payload.source,
-        upserted=upserted,
-        timestamp=datetime.now(UTC),
+        records=payload.records,
+        idempotency_key=x_idempotency_key,
     )
+    logger.info('Inventory sync source=%s upserted=%s', result.source, result.upserted)
+    return result
