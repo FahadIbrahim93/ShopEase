@@ -1,5 +1,7 @@
 import pytest
 
+pytest.importorskip('sqlalchemy')
+
 pytest.importorskip('httpx')
 
 from fastapi.testclient import TestClient

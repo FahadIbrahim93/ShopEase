@@ -18,6 +18,10 @@ class Settings(BaseSettings):
         description='Required API key for privileged endpoints',
     )
     low_stock_threshold: int = 10
+    database_url: str = Field(
+        'sqlite:///./shopease.db',
+        description='SQLAlchemy database URL',
+    )
 
     @field_validator('environment')
     @classmethod
