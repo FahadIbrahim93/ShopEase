@@ -18,6 +18,7 @@ from app.models import (
     ProductCreate,
     ProductListResponse,
 )
+from app.repositories.postgres_inventory_repository import PostgresInventoryRepository
 from app.services.inventory_service import InventoryService
 
 logger = logging.getLogger('shopease')
@@ -35,7 +36,10 @@ REQUEST_LATENCY = Histogram(
 )
 
 app = FastAPI(title='ShopEase API', version='0.3.0')
-app.state.inventory_service = InventoryService()
+settings = get_settings()
+repository = PostgresInventoryRepository(settings.database_url)
+repository.create_schema()
+app.state.inventory_service = InventoryService(repository)
 
 
 def get_inventory_service(request: Request) -> InventoryService:

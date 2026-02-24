@@ -1,12 +1,22 @@
 from decimal import Decimal
 
+import pytest
+
+pytest.importorskip('sqlalchemy')
+
 from app.models import ProductCreate
+from app.repositories.postgres_inventory_repository import PostgresInventoryRepository
 from app.services.inventory_service import InventoryService
 
 
-def test_sync_inventory_idempotent_by_key() -> None:
-    service = InventoryService()
+@pytest.fixture
+def service(tmp_path) -> InventoryService:
+    repository = PostgresInventoryRepository(f"sqlite:///{tmp_path / 'service.db'}")
+    repository.create_schema()
+    return InventoryService(repository)
 
+
+def test_sync_inventory_idempotent_by_key(service: InventoryService) -> None:
     first = service.sync_inventory(
         source='market-a',
         records=[ProductCreate(sku='SKU-1', name='One', price=Decimal('2.00'), quantity=2)],
@@ -25,8 +35,7 @@ def test_sync_inventory_idempotent_by_key() -> None:
     assert product.name == 'One'
 
 
-def test_list_products_paginates_and_reports_total() -> None:
-    service = InventoryService()
+def test_list_products_paginates_and_reports_total(service: InventoryService) -> None:
     service.upsert_product(ProductCreate(sku='AA', name='A1', price=Decimal('1.00'), quantity=3))
     service.upsert_product(ProductCreate(sku='BB', name='B1', price=Decimal('1.00'), quantity=1))
     service.upsert_product(ProductCreate(sku='CC', name='C1', price=Decimal('1.00'), quantity=2))

@@ -31,6 +31,7 @@ Copy `.env.example` to `.env` and adjust values as needed:
 - `ENVIRONMENT` (`development`, `test`, `staging`, `production`).
 - `API_KEY` for write endpoints (minimum 16 chars; default key forbidden in staging/production).
 - `LOW_STOCK_THRESHOLD` for reporting.
+- `DATABASE_URL` SQLAlchemy DSN (PostgreSQL in production, SQLite accepted for local development/tests).
 
 ## Core endpoints
 
