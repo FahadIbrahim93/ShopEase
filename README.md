@@ -4,7 +4,7 @@ ShopEase is now a real, testable backend service for e-commerce inventory manage
 
 ## What is implemented
 
-- FastAPI service with real inventory operations (create/update/list/adjust/sync).
+- FastAPI service with inventory operations (create/update/list/adjust/sync) plus idempotent sync support.
 - API key protection for mutating endpoints.
 - Validation and error handling with structured HTTP responses.
 - Monitoring endpoints:
@@ -28,15 +28,16 @@ Open `http://127.0.0.1:8000/docs` for API docs.
 
 Copy `.env.example` to `.env` and adjust values as needed:
 
-- `API_KEY` for write endpoints.
+- `ENVIRONMENT` (`development`, `test`, `staging`, `production`).
+- `API_KEY` for write endpoints (minimum 16 chars; default key forbidden in staging/production).
 - `LOW_STOCK_THRESHOLD` for reporting.
 
 ## Core endpoints
 
-- `GET /products`
+- `GET /products?limit=<n>&offset=<n>` (paginated result with `items`, `total`, `limit`, `offset`)
 - `POST /products` (requires `x-api-key`)
 - `POST /products/{sku}/adjust` (requires `x-api-key`)
-- `POST /sync/inventory` (requires `x-api-key`)
+- `POST /sync/inventory` (requires `x-api-key`, supports `x-idempotency-key`)
 - `GET /reports/low-stock`
 
 ## Quality and governance docs
